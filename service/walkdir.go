@@ -3,6 +3,7 @@ package service
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"slices"
@@ -17,6 +18,7 @@ type WalkerConfig struct {
 	Root       string
 	Ignore     *gitignore.GitIgnore
 	Exclude    []string
+	Out        io.Writer // add io.Writer to the struct for tests on cmd
 }
 
 // FSNode struct represents the filesystem into a tree holding the required information
@@ -87,8 +89,11 @@ func WalkTree(f *FSNode, dirPath string, prefix string, isLast bool, cfg *Walker
 		connector = "L__"
 		childPrefix = prefix + "    "
 	}
-
-	fmt.Println(prefix + connector + f.Name)
+	out := cfg.Out
+	if out == nil {
+		out = os.Stdout
+	}
+	fmt.Fprintln(out, prefix+connector+f.Name)
 
 	// in case a directory is found lazily create new nodes in the tree
 	if f.IsDir {
