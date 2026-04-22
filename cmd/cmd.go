@@ -10,24 +10,37 @@ import (
 	"trigo/service"
 )
 
-// initialize rootCmd
+// NewRootCommand creates a fresh root command instance.
+func NewRootCommand() *cobra.Command {
+	var (
+		dir     string
+		all     bool
+		exclude []string
+	)
 
-var (
-	rootCmd = &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "trigo",
 		Short: "Prints out a tree structure of the current directory or given dir",
 		Long:  `trigo: prints out the tree structure of the current directory or a given dir`,
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			absDir, err := filepath.Abs(dir)
 			if err != nil {
-				fmt.Fprintln(os.Stderr, err)
-				os.Exit(1)
+				return err
+			}
+
+			info, err := os.Stat(absDir)
+			if err != nil {
+				return fmt.Errorf("invalid directory %q: %w", dir, err)
+			}
+			if !info.IsDir() {
+				return fmt.Errorf("%q is not a directory", dir)
 			}
 
 			cfg := &service.WalkerConfig{
 				ShowHidden: all,
 				Root:       absDir,
 				Exclude:    exclude,
+				Out:        cmd.OutOrStdout(),
 			}
 
 			if _, err := os.Stat(filepath.Join(absDir, ".git")); err == nil {
@@ -37,25 +50,20 @@ var (
 			}
 
 			root := service.NewNode(absDir, true)
-			fmt.Println(absDir)
+			fmt.Fprintln(cmd.OutOrStdout(), absDir)
 			service.WalkTree(root, absDir, "", false, cfg)
+			return nil
 		},
 	}
-	dir     string
-	all     bool
-	exclude []string
-)
 
-func init() {
-	rootCmd.Flags().StringVarP(&dir, "dir", "d", ".", "Directory to print tree for")
-	rootCmd.Flags().BoolVarP(&all, "all", "a", false, "Show hidden files and directories")
-	rootCmd.Flags().StringArrayVarP(&exclude, "exclude", "e", []string{}, "Exclude files or directories by name")
+	cmd.Flags().StringVarP(&dir, "dir", "d", ".", "Directory to print tree for")
+	cmd.Flags().BoolVarP(&all, "all", "a", false, "Show hidden files and directories")
+	cmd.Flags().StringArrayVarP(&exclude, "exclude", "e", []string{}, "Exclude files or directories by name")
+
+	return cmd
 }
 
-// Execute runs the root command
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
+// Execute runs the root command.
+func Execute() error {
+	return NewRootCommand().Execute()
 }
