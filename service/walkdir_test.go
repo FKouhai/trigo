@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"trigo/service"
 )
@@ -128,7 +129,7 @@ func TestWalkTree(t *testing.T) {
 		out := captureOutput(func() {
 			service.WalkTree(root, tmpDir, "", false, defaultCfg(tmpDir))
 		})
-		if contains(out, ".hidden") {
+		if strings.Contains(out, ".hidden") {
 			t.Error("expected .hidden to be excluded from output")
 		}
 	})
@@ -138,7 +139,7 @@ func TestWalkTree(t *testing.T) {
 		out := captureOutput(func() {
 			service.WalkTree(root, tmpDir, "", false, &service.WalkerConfig{ShowHidden: true, Root: tmpDir})
 		})
-		if !contains(out, ".hidden") {
+		if !strings.Contains(out, ".hidden") {
 			t.Error("expected .hidden to appear in output with ShowHidden=true")
 		}
 	})
@@ -148,7 +149,7 @@ func TestWalkTree(t *testing.T) {
 		out := captureOutput(func() {
 			service.WalkTree(root, tmpDir, "", false, &service.WalkerConfig{ShowHidden: true, Root: tmpDir, Exclude: []string{"subdir"}})
 		})
-		if contains(out, "subdir") {
+		if strings.Contains(out, "subdir") {
 			t.Error("expected subdir to be excluded from output")
 		}
 	})
@@ -156,17 +157,4 @@ func TestWalkTree(t *testing.T) {
 	t.Run("nil node does not panic", func(t *testing.T) {
 		service.WalkTree(nil, "", "", false, defaultCfg(""))
 	})
-}
-
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(s) > 0 && containsHelper(s, substr))
-}
-
-func containsHelper(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
 }
