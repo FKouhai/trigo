@@ -40,13 +40,7 @@ func NewNode(name string, isDir bool) *FSNode {
 
 // DirContents lazily populates the tree with child nodes
 func (f *FSNode) DirContents(dirName string, cfg *WalkerConfig) {
-	dir, err := os.Open(dirName)
-	if err != nil {
-		return
-	}
-	defer dir.Close()
-
-	fileInfos, err := dir.Readdir(-1)
+	fileInfos, err := os.ReadDir(dirName)
 	if err != nil {
 		return
 	}
