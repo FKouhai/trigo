@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"trigo/service"
@@ -80,6 +81,28 @@ func TestFSNode_DirContents(t *testing.T) {
 		for _, child := range f.Children {
 			if child.Name == "file.txt" {
 				t.Error("expected file.txt to be excluded")
+			}
+		}
+	})
+
+	t.Run("exclude pattern skips matching files", func(t *testing.T) {
+		f := service.NewNode(tmpDir, true)
+		re := regexp.MustCompile(`\.txt$`)
+		f.DirContents(tmpDir, &service.WalkerConfig{ShowHidden: true, Root: tmpDir, ExcludePattern: []*regexp.Regexp{re}})
+		for _, child := range f.Children {
+			if child.Name == "file.txt" {
+				t.Error("expected file.txt to be excluded by pattern")
+			}
+		}
+	})
+
+	t.Run("exclude pattern skips matching directories", func(t *testing.T) {
+		f := service.NewNode(tmpDir, true)
+		re := regexp.MustCompile(`^subdir$`)
+		f.DirContents(tmpDir, &service.WalkerConfig{ShowHidden: true, Root: tmpDir, ExcludePattern: []*regexp.Regexp{re}})
+		for _, child := range f.Children {
+			if child.Name == "subdir" {
+				t.Error("expected subdir to be excluded by pattern")
 			}
 		}
 	})

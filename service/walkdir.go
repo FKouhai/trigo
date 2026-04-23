@@ -3,9 +3,11 @@ package service
 
 import (
 	"fmt"
+	"github.com/fatih/color"
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -14,11 +16,12 @@ import (
 
 // WalkerConfig type to add extra options to our tree walker
 type WalkerConfig struct {
-	ShowHidden bool
-	Root       string
-	Ignore     *gitignore.GitIgnore
-	Exclude    []string
-	Out        io.Writer // add io.Writer to the struct for tests on cmd
+	ShowHidden     bool
+	Root           string
+	Ignore         *gitignore.GitIgnore
+	Exclude        []string
+	ExcludePattern []*regexp.Regexp
+	Out            io.Writer // add io.Writer to the struct for tests on cmd
 }
 
 // FSNode struct represents the filesystem into a tree holding the required information
@@ -58,6 +61,18 @@ func (f *FSNode) DirContents(dirName string, cfg *WalkerConfig) {
 			continue
 		}
 
+		// Also check for regex patterns to exclude files
+		matched := false
+		for _, v := range cfg.ExcludePattern {
+			if v.MatchString(name) {
+				matched = true
+				break
+			}
+		}
+		if matched {
+			continue
+		}
+
 		if cfg.Ignore != nil {
 			relPath, _ := filepath.Rel(cfg.Root, filepath.Join(dirName, name))
 			// Excludes files found in the relative path based on the .gitignore
@@ -87,7 +102,11 @@ func WalkTree(f *FSNode, dirPath string, prefix string, isLast bool, cfg *Walker
 	if out == nil {
 		out = os.Stdout
 	}
-	fmt.Fprintln(out, prefix+connector+f.Name)
+	name := f.Name
+	if f.IsDir {
+		name = color.New(color.FgBlue).Sprint(f.Name)
+	}
+	fmt.Fprintln(out, prefix+connector+name)
 
 	// in case a directory is found lazily create new nodes in the tree
 	if f.IsDir {
