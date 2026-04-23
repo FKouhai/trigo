@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -36,11 +37,12 @@ func NewRootCommand() *cobra.Command {
 				return fmt.Errorf("%q is not a directory", dir)
 			}
 
+			buf := bufio.NewWriter(cmd.OutOrStdout())
 			cfg := &service.WalkerConfig{
 				ShowHidden: all,
 				Root:       absDir,
 				Exclude:    exclude,
-				Out:        cmd.OutOrStdout(),
+				Out:        buf,
 			}
 
 			if _, err := os.Stat(filepath.Join(absDir, ".git")); err == nil {
@@ -50,8 +52,12 @@ func NewRootCommand() *cobra.Command {
 			}
 
 			root := service.NewNode(absDir, true)
-			fmt.Fprintln(cmd.OutOrStdout(), absDir)
+			fmt.Fprintln(buf, absDir)
 			service.WalkTree(root, absDir, "", false, cfg)
+			err = buf.Flush()
+			if err != nil {
+				return err
+			}
 			return nil
 		},
 	}
