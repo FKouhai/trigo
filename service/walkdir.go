@@ -3,7 +3,6 @@ package service
 
 import (
 	"fmt"
-	"github.com/fatih/color"
 	"io"
 	"os"
 	"path/filepath"
@@ -12,6 +11,11 @@ import (
 	"strings"
 
 	gitignore "github.com/sabhiram/go-gitignore"
+)
+
+const (
+	ansiBlue  = "\033[34m"
+	ansiReset = "\033[0m"
 )
 
 // WalkerConfig type to add extra options to our tree walker
@@ -104,7 +108,7 @@ func WalkTree(f *FSNode, dirPath string, prefix string, isLast bool, cfg *Walker
 	}
 	name := f.Name
 	if f.IsDir {
-		name = color.New(color.FgBlue).Sprint(f.Name)
+		name = ansiBlue + f.Name + ansiReset
 	}
 	fmt.Fprintln(out, prefix+connector+name)
 
