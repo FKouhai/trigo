@@ -31,7 +31,8 @@
               "-w"
             ];
             src = ./.;
-            vendorHash = "sha256-wzsBqDlKIkiKUAoHiDjicqEJ+8wflXZxDrdOIQoEWBE=";
+            vendorHash = "sha256-N765Qh1xfdao/cA5SYgaWZIFnS8lNmEXBhY6GCoQuSU";
+
           };
         }
       );
