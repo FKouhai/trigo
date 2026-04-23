@@ -26,6 +26,10 @@
           default = pkgs.buildGoModule {
             pname = "trigo";
             version = "0.1.0";
+            ldflags = [
+              "-s"
+              "-w"
+            ];
             src = ./.;
             vendorHash = "sha256-wzsBqDlKIkiKUAoHiDjicqEJ+8wflXZxDrdOIQoEWBE=";
           };
