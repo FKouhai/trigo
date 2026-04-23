@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 
 	gitignore "github.com/sabhiram/go-gitignore"
 	"github.com/spf13/cobra"
@@ -19,6 +20,8 @@ func NewRootCommand() *cobra.Command {
 		exclude []string
 	)
 
+	var excludePatterns []string
+
 	cmd := &cobra.Command{
 		Use:   "trigo",
 		Short: "Prints out a tree structure of the current directory or given dir",
@@ -27,6 +30,14 @@ func NewRootCommand() *cobra.Command {
 			absDir, err := filepath.Abs(dir)
 			if err != nil {
 				return err
+			}
+			compiled := make([]*regexp.Regexp, 0, len(excludePatterns))
+			for _, p := range excludePatterns {
+				re, err := regexp.Compile(p)
+				if err != nil {
+					return fmt.Errorf("invalid pattern %q: %w", p, err)
+				}
+				compiled = append(compiled, re)
 			}
 
 			info, err := os.Stat(absDir)
@@ -39,10 +50,11 @@ func NewRootCommand() *cobra.Command {
 
 			buf := bufio.NewWriter(cmd.OutOrStdout())
 			cfg := &service.WalkerConfig{
-				ShowHidden: all,
-				Root:       absDir,
-				Exclude:    exclude,
-				Out:        buf,
+				ShowHidden:     all,
+				Root:           absDir,
+				Exclude:        exclude,
+				ExcludePattern: compiled,
+				Out:            buf,
 			}
 
 			if _, err := os.Stat(filepath.Join(absDir, ".git")); err == nil {
@@ -65,6 +77,7 @@ func NewRootCommand() *cobra.Command {
 	cmd.Flags().StringVarP(&dir, "dir", "d", ".", "Directory to print tree for")
 	cmd.Flags().BoolVarP(&all, "all", "a", false, "Show hidden files and directories")
 	cmd.Flags().StringArrayVarP(&exclude, "exclude", "e", []string{}, "Exclude files or directories by name")
+	cmd.Flags().StringArrayVarP(&excludePatterns, "exclude-expression", "E", []string{}, "Exclude by regex pattern")
 
 	return cmd
 }

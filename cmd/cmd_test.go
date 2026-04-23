@@ -56,6 +56,32 @@ func TestRootCommand(t *testing.T) {
 			wantNotOut: []string{"skipme"},
 		},
 		{
+			name: "--exclude-expression skips matching files",
+			args: []string{"--exclude-expression", `\.log$`},
+			setup: func(t *testing.T, dir string) {
+				os.WriteFile(filepath.Join(dir, "app.log"), []byte("log"), 0o644)
+				os.WriteFile(filepath.Join(dir, "keep.txt"), []byte("keep"), 0o644)
+			},
+			wantOut:    []string{"keep.txt"},
+			wantNotOut: []string{"app.log"},
+		},
+		{
+			name: "multiple --exclude-expression flags work",
+			args: []string{"--exclude-expression", `\.log$`, "--exclude-expression", `\.tmp$`},
+			setup: func(t *testing.T, dir string) {
+				os.WriteFile(filepath.Join(dir, "a.log"), []byte("log"), 0o644)
+				os.WriteFile(filepath.Join(dir, "b.tmp"), []byte("tmp"), 0o644)
+				os.WriteFile(filepath.Join(dir, "keep.txt"), []byte("keep"), 0o644)
+			},
+			wantOut:    []string{"keep.txt"},
+			wantNotOut: []string{"a.log", "b.tmp"},
+		},
+		{
+			name:    "invalid --exclude-expression returns error",
+			args:    []string{"--exclude-expression", `[bad`},
+			wantErr: true,
+		},
+		{
 			name:    "invalid directory returns error",
 			args:    []string{"--dir", "/nonexistent/path/12345"},
 			wantErr: true,
