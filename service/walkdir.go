@@ -120,4 +120,7 @@ func WalkTree(f *FSNode, dirPath string, prefix string, isLast bool, cfg *Walker
 	for i, child := range f.Children {
 		WalkTree(child, filepath.Join(dirPath, child.Name), childPrefix, i == len(f.Children)-1, cfg)
 	}
+	// nullify already processed children
+	// allows the go GC to clear the unused memroy
+	f.Children = nil
 }
