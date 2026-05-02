@@ -30,6 +30,13 @@
               "-s"
               "-w"
             ];
+            postInstall = ''
+              installShellCompletion --cmd trigo \
+                --bash <($out/bin/trigo completion bash) \
+                --fish <($out/bin/trigo completion fish) \
+                --zsh <($out/bin/trigo completion zsh)
+            '';
+            nativeBuildInputs = [ pkgs.installShellFiles ];
             src = ./.;
             vendorHash = "sha256-zseKrrna1jGda6lES3MCRBDGlv42fwKQmT5KiJDhmd0=";
           };
